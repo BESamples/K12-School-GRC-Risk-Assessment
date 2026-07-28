@@ -10,7 +10,7 @@ All testing must remain safe, controlled, documented, and limited to the simulat
 
 Testing is authorized only against systems created for this project, including:
 
-- The `northstar.local` Active Directory domain
+- The `corp.com` Active Directory domain
 - The Windows Server domain controller
 - Lab Windows workstations
 - The Ubuntu Wazuh server
