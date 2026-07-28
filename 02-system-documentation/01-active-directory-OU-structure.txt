@@ -1,0 +1,146 @@
+The OU structure separates users and computers by role and system type.
+
+This structure can later be used for:
+
+Group Policy assignment
+Account administration
+Security control testing
+Access reviews
+Workstation management
+User offboarding
+Security Groups
+
+The following Global Security Groups were created:
+
+Security Group	Purpose
+GG_IT_Admins	IT administrative staff
+GG_School_Admins	School administrative staff
+GG_SharedDrive_Access	Access to shared school files
+GG_StaffRecords_Access	Access to employee records
+GG_StudentRecords_Modify	Modify access to student records
+GG_StudentRecords_Read	Read-only access to student records
+GG_Students	Student accounts
+GG_Teachers	Teacher accounts
+
+The GG prefix identifies each group as a Global Group.
+
+Simulated User Accounts
+
+A representative sample of fictional users was created.
+
+IT Staff
+Alex Morgan — IT Support Specialist
+Jordan Lee — IT Administrator
+Administration
+Emily Carter
+Lisa Hernandez
+Marcus Turner
+Teachers
+David Nguyen
+Sarah Brooks
+Kevin Hall
+Students
+Taylor Adams
+Cameron Reed
+Riley Lewis
+Jordan Price
+Avery Scott
+Disabled Account
+Former Teacher
+
+The Former Teacher account was disabled to simulate an employee offboarding scenario.
+
+Service Account Decision
+
+An Active Directory account named svc_wazuh was initially created for the Wazuh service.
+
+The account was removed because the Wazuh manager will run on an Ubuntu virtual machine and does not require an Active Directory service account for normal operation.
+
+This change reduced the number of unnecessary accounts in the domain.
+
+Group Membership Validation
+
+Representative users were reviewed to confirm that access was assigned according to job responsibilities.
+
+Lisa Hernandez
+
+Verified memberships:
+
+GG_School_Admins
+GG_StudentRecords_Modify
+Domain Users
+
+Lisa was assigned permission to modify student records based on her administrative role.
+
+Taylor Adams
+
+Verified memberships:
+
+GG_Students
+GG_SharedDrive_Access
+Domain Users
+
+Taylor was not assigned access to administrative or student-record security groups.
+
+Jordan Lee
+
+Verified memberships:
+
+GG_IT_Admins
+Domain Users
+
+Jordan was not added to the Domain Admins group.
+
+This supports the principle of least privilege by avoiding unnecessary domain-wide administrative access.
+
+Sarah Brooks
+
+Verified memberships:
+
+GG_Teachers
+GG_StudentRecords_Read
+GG_SharedDrive_Access
+Domain Users
+
+Sarah received read-only student-record access based on her teacher role.
+
+Validation Results
+
+The following items were successfully verified:
+
+The Northstar OU structure was created.
+User accounts were placed in the appropriate OUs.
+Eight role-based security groups were created.
+Administrative users received the appropriate access.
+Teacher access was configured.
+Student access was limited.
+The former employee account was disabled.
+The IT administrator was not granted Domain Admin access.
+The unnecessary Wazuh Active Directory service account was removed.
+GRC Relevance
+
+This activity demonstrates several identity and access-management practices:
+
+Account provisioning
+Role-based access control
+Least privilege
+Group membership validation
+User offboarding
+Access authorization
+Separation of user roles
+
+The account review process is similar to work performed during real user provisioning and periodic access reviews.
+
+Evidence Collected
+
+The following screenshots were collected:
+
+Evidence ID	File Name	Description
+EV-AD-001	01-northstar-ou-structure.png	Northstar Organizational Unit structure
+EV-AD-002	02-security-groups.png	Active Directory security groups
+EV-AD-003	03-lisa-hernandez-group-membership.png	Administrative role-based access
+EV-AD-004	04-disabled-former-teacher-account.png	Disabled former employee account
+EV-AD-005	05-jordan-lee-least-privilege.png	IT account without Domain Admin membership
+Result
+
+The Active Directory organizational structure, test users, security groups, and representative group memberships were successfully configured and validated.
