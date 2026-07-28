@@ -1,1 +1,1 @@
-This folder contains Northstar lab setup scripts.
+This folder contains lab setup scripts.
