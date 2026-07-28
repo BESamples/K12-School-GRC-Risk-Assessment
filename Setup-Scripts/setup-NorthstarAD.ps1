@@ -49,30 +49,43 @@ function Ensure-OU {
 
     return $distinguishedName
 }
-        [Parameter(Mandatory)][string]$Name,
-        [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][string]$Description
+
+function Ensure-Group {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [Parameter(Mandatory)]
+        [string]$Path,
+
+        [Parameter(Mandatory)]
+        [string]$Description
     )
 
-    $existing = Get-ADGroup -Filter "SamAccountName -eq '$Name'" -ErrorAction SilentlyContinue
+    $existing = Get-ADGroup `
+        -Filter "SamAccountName -eq '$Name'" `
+        -ErrorAction SilentlyContinue
 
-    if (-not $existing) {
+    if ($null -eq $existing) {
         New-ADGroup `
             -Name $Name `
             -SamAccountName $Name `
             -GroupCategory Security `
             -GroupScope Global `
             -Path $Path `
-            -Description $Description | Out-Null
+            -Description $Description |
+            Out-Null
 
         Write-Host "Created group: $Name" -ForegroundColor Green
     }
     else {
-        Set-ADGroup -Identity $existing -Description $Description
+        Set-ADGroup `
+            -Identity $existing `
+            -Description $Description
+
         Write-Host "Group already exists: $Name" -ForegroundColor DarkGray
     }
 }
-
 function Ensure-User {
     param(
         [Parameter(Mandatory)][string]$GivenName,
