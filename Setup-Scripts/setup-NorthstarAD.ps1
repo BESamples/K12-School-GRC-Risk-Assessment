@@ -19,15 +19,28 @@ function Write-Step {
 
 function Ensure-OU {
     param(
-        [Parameter(Mandatory)][string]$Name,
-        [Parameter(Mandatory)][string]$Path
+        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [Parameter(Mandatory)]
+        [string]$Path
     )
 
     $distinguishedName = "OU=$Name,$Path"
-    $existing = Get-ADOrganizationalUnit -Identity $distinguishedName -ErrorAction SilentlyContinue
 
-    if (-not $existing) {
-        New-ADOrganizationalUnit -Name $Name -Path $Path -ProtectedFromAccidentalDeletion $false | Out-Null
+    $existing = Get-ADOrganizationalUnit `
+        -Filter "Name -eq '$Name'" `
+        -SearchBase $Path `
+        -SearchScope OneLevel `
+        -ErrorAction Stop
+
+    if ($null -eq $existing) {
+        New-ADOrganizationalUnit `
+            -Name $Name `
+            -Path $Path `
+            -ProtectedFromAccidentalDeletion $false |
+            Out-Null
+
         Write-Host "Created OU: $distinguishedName" -ForegroundColor Green
     }
     else {
@@ -36,9 +49,6 @@ function Ensure-OU {
 
     return $distinguishedName
 }
-
-function Ensure-Group {
-    param(
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][string]$Path,
         [Parameter(Mandatory)][string]$Description
