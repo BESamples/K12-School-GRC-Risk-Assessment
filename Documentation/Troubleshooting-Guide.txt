@@ -1,0 +1,1166 @@
+
+ff6a4ed3-5b6c-4a74-8ec3-335f1c70e606.png
+I got this when tryign to run the setup script on the 2019 server
+
+05d707f5-4f75-4be6-a450-7c79977ea02d.png
+
+6d09bbfd-de3e-4399-ad20-e8c2e77378be.png
+
+You do not have a setup guide yet. I mentioned it as a recommended documentation file for your GitHub project.
+
+The Setup Guide explains how someone can rebuild your Northstar Active Directory lab using your PowerShell script. Put it here:
+
+GRC-School-Lab/
+└── Documentation/
+    └── Setup-Guide.md
+Use this for Setup-Guide.md:
+
+# Northstar Active Directory Lab Setup Guide
+
+## Purpose
+
+This guide explains how to deploy the Northstar simulated school Active Directory environment.
+
+The lab creates organizational units, users, security groups, group memberships, a disabled former employee account, and a service account for GRC testing.
+
+## Lab Requirements
+
+- Windows Server 2019
+- Active Directory Domain Services installed
+- Server configured as a domain controller
+- PowerShell 5.1 or later
+- Active Directory PowerShell module
+- Domain Administrator access
+
+## Lab Domain
+
+The lab was tested using:
+
+```text
+corp.com
+The script automatically detects the current Active Directory domain.
+
+Files
+The setup script is located at:
+
+Scripts/setup-NorthstarAD-Corrected.ps1
+Setup Instructions
+1. Open PowerShell as Administrator
+Right-click Windows PowerShell or PowerShell ISE and select:
+
+Run as administrator
+2. Allow the script to run during the current PowerShell session
+Set-ExecutionPolicy Bypass -Scope Process -Force
+This change only applies to the current PowerShell window.
+
+3. Run the setup script
+& 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+4. Enter a temporary password
+The script will prompt for a temporary password for the lab accounts.
+
+The password must meet the domain password-complexity requirements.
+
+5. Wait for the setup to complete
+A successful deployment displays:
+
+Northstar lab setup is complete.
+Objects Created
+Organizational Units
+Northstar
+
+Users
+
+IT
+
+Administration
+
+Teachers
+
+Students
+
+Service Accounts
+
+Disabled Users
+
+Computers
+
+Servers
+
+Staff Workstations
+
+Student Workstations
+
+Groups
+
+User Accounts
+The script creates simulated accounts for:
+
+IT staff
+
+School administrators
+
+Teachers
+
+Students
+
+A service account
+
+A disabled former employee
+
+Security Groups
+The script creates groups for:
+
+IT administrators
+
+School administrators
+
+Teachers
+
+Students
+
+Student-record access
+
+Staff-record access
+
+Shared-drive access
+
+Optional Script Switches
+Force users to change their password at the next logon:
+
+& '.\setup-NorthstarAD-Corrected.ps1' `
+    -ForcePasswordChangeAtNextLogon
+Reset passwords for accounts that already exist:
+
+& '.\setup-NorthstarAD-Corrected.ps1' `
+    -ResetExistingPasswords
+Add the simulated IT administrator to Domain Admins:
+
+& '.\setup-NorthstarAD-Corrected.ps1' `
+    -AddJLeeToDomainAdmins
+The Domain Admins option should only be used when testing privileged-access risks.
+
+Validation
+Verify the organizational units:
+
+Get-ADOrganizationalUnit -Filter * |
+    Where-Object {
+        $_.DistinguishedName -like '*OU=Northstar,*'
+    } |
+    Select-Object Name, DistinguishedName |
+    Format-Table -AutoSize
+Verify the users:
+
+Get-ADUser `
+    -SearchBase 'OU=Users,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, SamAccountName, Enabled |
+    Format-Table -AutoSize
+Verify the security groups:
+
+Get-ADGroup `
+    -SearchBase 'OU=Groups,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, GroupScope, GroupCategory |
+    Format-Table -AutoSize
+Generated Evidence
+After the script runs, it creates:
+
+A CSV validation report
+
+A PowerShell setup log
+
+These files should be reviewed for sensitive information before being uploaded to GitHub.
+
+Store them in:
+
+Evidence/Reports/
+Evidence/Logs/
+Store verification screenshots in:
+
+Evidence/Screenshots/
+Security Notice
+This environment contains simulated accounts and intentional security risks for training purposes.
+
+Do not run this script in a production Active Directory environment.
+
+
+That guide documents what you just did on the Windows Server 2019 lab. The troubleshooting guide will separately document the execution-policy, missing OU, and extra-bracket errors you encountered.
+
+then troubleshootig guide?
+
+Put it here:
+
+GRC-School-Lab/
+└── Documentation/
+    └── Troubleshooting-Guide.md
+Copy this into Troubleshooting-Guide.md:
+
+# Northstar Active Directory Lab Troubleshooting Guide
+
+## Purpose
+
+This guide documents problems encountered while deploying the Northstar Active Directory lab on Windows Server 2019.
+
+The purpose is to show how deployment errors were identified, corrected, tested, and documented.
+
+---
+
+## Issue 1: PowerShell Script Execution Was Blocked
+
+### Error
+
+```text
+File cannot be loaded because running scripts is disabled on this system.
+UnauthorizedAccess
+Cause
+The Windows Server PowerShell execution policy did not allow unsigned PowerShell scripts to run.
+
+Resolution
+PowerShell was opened as Administrator, and the execution policy was temporarily changed for the current PowerShell session:
+
+Set-ExecutionPolicy Bypass -Scope Process -Force
+The script was then run again:
+
+& 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+Result
+The script was allowed to run.
+
+Security Note
+Using -Scope Process limits the change to the current PowerShell session. The server-wide execution policy was not permanently changed.
+
+Issue 2: Northstar Organizational Unit Was Not Found
+Error
+Get-ADOrganizationalUnit : Directory object not found
+ADIdentityNotFoundException
+Cause
+The original script attempted to locate the Northstar organizational unit using:
+
+Get-ADOrganizationalUnit -Identity $distinguishedName
+During the first deployment, the Northstar OU did not exist yet. The -Identity parameter generated an error instead of returning an empty result.
+
+Resolution
+The OU lookup was changed to search the parent path:
+
+$existing = Get-ADOrganizationalUnit `
+    -Filter "Name -eq '$Name'" `
+    -SearchBase $Path `
+    -SearchScope OneLevel `
+    -ErrorAction Stop
+The script then checks whether a matching OU was found:
+
+if ($null -eq $existing) {
+    New-ADOrganizationalUnit `
+        -Name $Name `
+        -Path $Path `
+        -ProtectedFromAccidentalDeletion $false |
+        Out-Null
+}
+Result
+The script successfully created the Northstar OU and its child OUs.
+
+Issue 3: Unexpected Closing Parenthesis or Brace
+Error
+Unexpected token ')' in expression or statement.
+Unexpected token '}' in expression or statement.
+ParserError
+Cause
+While replacing the Ensure-OU function, parts of the previous function remained in the script.
+
+This created extra closing parentheses and braces around approximately lines 55 and 74.
+
+Resolution
+Instead of continuing to edit the damaged copy, a clean corrected version of the script was created.
+
+The corrected script was saved as:
+
+setup-NorthstarAD-Corrected.ps1
+The new script replaced the incomplete function sections and ensured that each function had correctly matched parentheses and braces.
+
+Syntax Validation
+The following PowerShell command can be used to check the script for syntax errors before running it:
+
+$path = 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+
+$tokens = $null
+$errors = $null
+
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $path,
+    [ref]$tokens,
+    [ref]$errors
+) | Out-Null
+
+if ($errors.Count -eq 0) {
+    Write-Host 'No syntax errors found.' -ForegroundColor Green
+}
+else {
+    $errors |
+        Select-Object Message,
+            @{Name='Line'; Expression={$_.Extent.StartLineNumber}},
+            @{Name='Column'; Expression={$_.Extent.StartColumnNumber}} |
+        Format-Table -AutoSize
+}
+Result
+The corrected script passed syntax validation and completed successfully.
+
+Issue 4: Password Does Not Meet Domain Requirements
+Possible Error
+The password does not meet the password policy requirements.
+Cause
+The temporary password entered during setup does not meet the Active Directory domain password policy.
+
+The domain may require:
+
+A minimum password length
+
+Uppercase letters
+
+Lowercase letters
+
+Numbers
+
+Special characters
+
+Resolution
+Run the script again and enter a stronger temporary password.
+
+Example format:
+
+Northstar-Lab2026!
+Do not store or publish the actual lab password in GitHub.
+
+Issue 5: Script Is Run from the Wrong File Location
+Possible Error
+The term is not recognized as the name of a cmdlet, function, script file, or operable program.
+Cause
+PowerShell cannot find the script at the specified path.
+
+This can also happen when multiple copies exist with names such as:
+
+setup-NorthstarAD.ps1
+setup-NorthstarAD (1).ps1
+setup-NorthstarAD-Corrected.ps1
+Resolution
+Confirm the script location:
+
+Get-ChildItem 'C:\Users\Administrator\Downloads' |
+    Where-Object { $_.Name -like '*NorthstarAD*' }
+Run the corrected file using its full path:
+
+& 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+Issue 6: Active Directory Module Is Missing
+Possible Error
+The specified module 'ActiveDirectory' was not loaded.
+Cause
+The Active Directory PowerShell module is not installed, or the script is being run on a system without the required management tools.
+
+Verification
+Get-Module -ListAvailable ActiveDirectory
+Resolution
+On Windows Server, install the Active Directory management tools:
+
+Install-WindowsFeature RSAT-AD-PowerShell
+Then import the module:
+
+Import-Module ActiveDirectory
+Issue 7: Script Is Not Run as Administrator
+Possible Error
+The script requires elevation.
+Access is denied.
+Cause
+The PowerShell window was not opened with administrative privileges.
+
+Resolution
+Close PowerShell and reopen it by selecting:
+
+Run as administrator
+Run the script again after elevation.
+
+Validation Commands
+Verify Organizational Units
+Get-ADOrganizationalUnit -Filter * |
+    Where-Object {
+        $_.DistinguishedName -like '*OU=Northstar,*'
+    } |
+    Select-Object Name, DistinguishedName |
+    Format-Table -AutoSize
+Verify Users
+Get-ADUser `
+    -SearchBase 'OU=Users,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, SamAccountName, Enabled |
+    Format-Table -AutoSize
+Verify Security Groups
+Get-ADGroup `
+    -SearchBase 'OU=Groups,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, GroupScope, GroupCategory |
+    Format-Table -AutoSize
+Evidence Collected
+The following evidence should be stored in the GitHub repository:
+
+Evidence/
+├── Screenshots/
+│   ├── 01-Northstar-OUs.png
+│   ├── 02-Northstar-Users.png
+│   ├── 03-Northstar-Groups.png
+│   └── 04-Script-Completed.png
+├── Reports/
+│   └── Northstar-AD-Build.csv
+└── Logs/
+    └── Northstar-AD-Setup.log
+Before uploading evidence, verify that it does not contain:
+
+Passwords
+
+Authentication tokens
+
+Personal information
+
+Information from a production environment
+
+Lessons Learned
+The deployment demonstrated the importance of:
+
+Testing PowerShell scripts before deployment
+
+Using safe Active Directory search methods
+
+Validating PowerShell syntax
+
+Maintaining one clearly named working script
+
+Using repeatable scripts for temporary lab environments
+
+Collecting logs, screenshots, and reports as evidence
+
+Documenting errors and corrective actions
+
+These activities support GRC responsibilities such as control testing, evidence collection, change documentation, risk identification, and remediation tracking.
+
+
+This guide documents the actual problems you encountered instead of presenting a lab where everything worked perfectly. That makes the GitHub project stronger because troubleshooting and remediation are part of real GRC and IT control work.
+
+can you put this in a format so I can make a txt in github
+
+Here is the plain-text version ready for GitHub:
+
+Troubleshooting-Guide.txt
+
+Place it in:
+
+GRC-School-Lab/
+└── Documentation/
+    └── Troubleshooting-Guide.txt
+In GitHub, open the repository, select Add file → Upload files, upload the text file, then commit it with a message such as:
+
+Add Northstar AD troubleshooting documentation
+
+
+
+Library
+/
+GRC Project
+/
+Troubleshooting-Guide.txt
+
+
+NORTHSTAR ACTIVE DIRECTORY LAB TROUBLESHOOTING GUIDE
+
+PURPOSE
+
+This guide documents problems encountered while deploying the Northstar Active Directory lab on Windows Server 2019.
+
+The purpose is to show how deployment errors were identified, corrected, tested, and documented.
+
+
+============================================================
+ISSUE 1: POWERSHELL SCRIPT EXECUTION WAS BLOCKED
+============================================================
+
+ERROR
+
+File cannot be loaded because running scripts is disabled on this system.
+UnauthorizedAccess
+
+
+CAUSE
+
+The Windows Server PowerShell execution policy did not allow unsigned PowerShell scripts to run.
+
+
+RESOLUTION
+
+PowerShell was opened as Administrator, and the execution policy was temporarily changed for the current PowerShell session:
+
+Set-ExecutionPolicy Bypass -Scope Process -Force
+
+The script was then run again:
+
+& 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+
+
+RESULT
+
+The script was allowed to run.
+
+
+SECURITY NOTE
+
+Using -Scope Process limits the change to the current PowerShell session. The server-wide execution policy was not permanently changed.
+
+
+============================================================
+ISSUE 2: NORTHSTAR ORGANIZATIONAL UNIT WAS NOT FOUND
+============================================================
+
+ERROR
+
+Get-ADOrganizationalUnit : Directory object not found
+ADIdentityNotFoundException
+
+
+CAUSE
+
+The original script attempted to locate the Northstar organizational unit using:
+
+Get-ADOrganizationalUnit -Identity $distinguishedName
+
+During the first deployment, the Northstar OU did not exist yet. The -Identity parameter generated an error instead of returning an empty result.
+
+
+RESOLUTION
+
+The OU lookup was changed to search the parent path:
+
+$existing = Get-ADOrganizationalUnit `
+    -Filter "Name -eq '$Name'" `
+    -SearchBase $Path `
+    -SearchScope OneLevel `
+    -ErrorAction Stop
+
+The script then checks whether a matching OU was found:
+
+if ($null -eq $existing) {
+    New-ADOrganizationalUnit `
+        -Name $Name `
+        -Path $Path `
+        -ProtectedFromAccidentalDeletion $false |
+        Out-Null
+}
+
+
+RESULT
+
+The script successfully created the Northstar OU and its child OUs.
+
+
+============================================================
+ISSUE 3: UNEXPECTED CLOSING PARENTHESIS OR BRACE
+============================================================
+
+ERROR
+
+Unexpected token ')' in expression or statement.
+Unexpected token '}' in expression or statement.
+ParserError
+
+
+CAUSE
+
+While replacing the Ensure-OU function, parts of the previous function remained in the script.
+
+This created extra closing parentheses and braces around approximately lines 55 and 74.
+
+
+RESOLUTION
+
+Instead of continuing to edit the damaged copy, a clean corrected version of the script was created.
+
+The corrected script was saved as:
+
+setup-NorthstarAD-Corrected.ps1
+
+The new script replaced the incomplete function sections and ensured that each function had correctly matched parentheses and braces.
+
+
+SYNTAX VALIDATION
+
+The following PowerShell command can be used to check the script for syntax errors before running it:
+
+$path = 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+
+$tokens = $null
+$errors = $null
+
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $path,
+    [ref]$tokens,
+    [ref]$errors
+) | Out-Null
+
+if ($errors.Count -eq 0) {
+    Write-Host 'No syntax errors found.' -ForegroundColor Green
+}
+else {
+    $errors |
+        Select-Object Message,
+            @{Name='Line'; Expression={$_.Extent.StartLineNumber}},
+            @{Name='Column'; Expression={$_.Extent.StartColumnNumber}} |
+        Format-Table -AutoSize
+}
+
+
+RESULT
+
+The corrected script passed syntax validation and completed successfully.
+
+
+============================================================
+ISSUE 4: PASSWORD DOES NOT MEET DOMAIN REQUIREMENTS
+============================================================
+
+POSSIBLE ERROR
+
+The password does not meet the password policy requirements.
+
+
+CAUSE
+
+The temporary password entered during setup does not meet the Active Directory domain password policy.
+
+The domain may require:
+
+- A minimum password length
+- Uppercase letters
+- Lowercase letters
+- Numbers
+- Special characters
+
+
+RESOLUTION
+
+Run the script again and enter a stronger temporary password.
+
+Example format:
+
+Northstar-Lab2026!
+
+Do not store or publish the actual lab password in GitHub.
+
+
+============================================================
+ISSUE 5: SCRIPT IS RUN FROM THE WRONG FILE LOCATION
+============================================================
+
+POSSIBLE ERROR
+
+The term is not recognized as the name of a cmdlet, function, script file, or operable program.
+
+
+CAUSE
+
+PowerShell cannot find the script at the specified path.
+
+This can also happen when multiple copies exist with names such as:
+
+setup-NorthstarAD.ps1
+setup-NorthstarAD (1).ps1
+setup-NorthstarAD-Corrected.ps1
+
+
+RESOLUTION
+
+Confirm the script location:
+
+Get-ChildItem 'C:\Users\Administrator\Downloads' |
+    Where-Object { $_.Name -like '*NorthstarAD*' }
+
+Run the corrected file using its full path:
+
+& 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+
+
+============================================================
+ISSUE 6: ACTIVE DIRECTORY MODULE IS MISSING
+============================================================
+
+POSSIBLE ERROR
+
+The specified module 'ActiveDirectory' was not loaded.
+
+
+CAUSE
+
+The Active Directory PowerShell module is not installed, or the script is being run on a system without the required management tools.
+
+
+VERIFICATION
+
+Get-Module -ListAvailable ActiveDirectory
+
+
+RESOLUTION
+
+On Windows Server, install the Active Directory management tools:
+
+Install-WindowsFeature RSAT-AD-PowerShell
+
+Then import the module:
+
+Import-Module ActiveDirectory
+
+
+============================================================
+ISSUE 7: SCRIPT IS NOT RUN AS ADMINISTRATOR
+============================================================
+
+POSSIBLE ERROR
+
+The script requires elevation.
+Access is denied.
+
+
+CAUSE
+
+The PowerShell window was not opened with administrative privileges.
+
+
+RESOLUTION
+
+Close PowerShell and reopen it by selecting:
+
+Run as administrator
+
+Run the script again after elevation.
+
+
+============================================================
+VALIDATION COMMANDS
+============================================================
+
+VERIFY ORGANIZATIONAL UNITS
+
+Get-ADOrganizationalUnit -Filter * |
+    Where-Object {
+        $_.DistinguishedName -like '*OU=Northstar,*'
+    } |
+    Select-Object Name, DistinguishedName |
+    Format-Table -AutoSize
+
+
+VERIFY USERS
+
+Get-ADUser `
+    -SearchBase 'OU=Users,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, SamAccountName, Enabled |
+    Format-Table -AutoSize
+
+
+VERIFY SECURITY GROUPS
+
+Get-ADGroup `
+    -SearchBase 'OU=Groups,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, GroupScope, GroupCategory |
+    Format-Table -AutoSize
+
+
+============================================================
+EVIDENCE COLLECTED
+============================================================
+
+The following evidence should be stored in the GitHub repository:
+
+Evidence/
+|-- Screenshots/
+|   |-- 01-Northstar-OUs.png
+|   |-- 02-Northstar-Users.png
+|   |-- 03-Northstar-Groups.png
+|   `-- 04-Script-Completed.png
+|-- Reports/
+|   `-- Northstar-AD-Build.csv
+`-- Logs/
+    `-- Northstar-AD-Setup.log
+
+
+Before uploading evidence, verify that it does not contain:
+
+- Passwords
+- Authentication tokens
+- Personal information
+- Information from a production environment
+
+
+============================================================
+LESSONS LEARNED
+============================================================
+
+The deployment demonstrated the importance of:
+
+- Testing PowerShell scripts before deployment
+- Using safe Active Directory search methods
+- Validating PowerShell syntax
+- Maintaining one clearly named working script
+- Using repeatable scripts for temporary lab environments
+- Collecting logs, screenshots, and reports as evidence
+- Documenting errors and corrective actions
+
+These activities support GRC responsibilities such as control testing, evidence collection, change documentation, risk identification, and remediation tracking.
+Notifications
+
+There aren't any updates for this month. However, you can find all our How-to guides on our blog.
+
+Visit our blog
+
+Library
+/
+GRC Project
+/
+Troubleshooting-Guide.txt
+
+
+NORTHSTAR ACTIVE DIRECTORY LAB TROUBLESHOOTING GUIDE
+
+PURPOSE
+
+This guide documents problems encountered while deploying the Northstar Active Directory lab on Windows Server 2019.
+
+The purpose is to show how deployment errors were identified, corrected, tested, and documented.
+
+
+============================================================
+ISSUE 1: POWERSHELL SCRIPT EXECUTION WAS BLOCKED
+============================================================
+
+ERROR
+
+File cannot be loaded because running scripts is disabled on this system.
+UnauthorizedAccess
+
+
+CAUSE
+
+The Windows Server PowerShell execution policy did not allow unsigned PowerShell scripts to run.
+
+
+RESOLUTION
+
+PowerShell was opened as Administrator, and the execution policy was temporarily changed for the current PowerShell session:
+
+Set-ExecutionPolicy Bypass -Scope Process -Force
+
+The script was then run again:
+
+& 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+
+
+RESULT
+
+The script was allowed to run.
+
+
+SECURITY NOTE
+
+Using -Scope Process limits the change to the current PowerShell session. The server-wide execution policy was not permanently changed.
+
+
+============================================================
+ISSUE 2: NORTHSTAR ORGANIZATIONAL UNIT WAS NOT FOUND
+============================================================
+
+ERROR
+
+Get-ADOrganizationalUnit : Directory object not found
+ADIdentityNotFoundException
+
+
+CAUSE
+
+The original script attempted to locate the Northstar organizational unit using:
+
+Get-ADOrganizationalUnit -Identity $distinguishedName
+
+During the first deployment, the Northstar OU did not exist yet. The -Identity parameter generated an error instead of returning an empty result.
+
+
+RESOLUTION
+
+The OU lookup was changed to search the parent path:
+
+$existing = Get-ADOrganizationalUnit `
+    -Filter "Name -eq '$Name'" `
+    -SearchBase $Path `
+    -SearchScope OneLevel `
+    -ErrorAction Stop
+
+The script then checks whether a matching OU was found:
+
+if ($null -eq $existing) {
+    New-ADOrganizationalUnit `
+        -Name $Name `
+        -Path $Path `
+        -ProtectedFromAccidentalDeletion $false |
+        Out-Null
+}
+
+
+RESULT
+
+The script successfully created the Northstar OU and its child OUs.
+
+
+============================================================
+ISSUE 3: UNEXPECTED CLOSING PARENTHESIS OR BRACE
+============================================================
+
+ERROR
+
+Unexpected token ')' in expression or statement.
+Unexpected token '}' in expression or statement.
+ParserError
+
+
+CAUSE
+
+While replacing the Ensure-OU function, parts of the previous function remained in the script.
+
+This created extra closing parentheses and braces around approximately lines 55 and 74.
+
+
+RESOLUTION
+
+Instead of continuing to edit the damaged copy, a clean corrected version of the script was created.
+
+The corrected script was saved as:
+
+setup-NorthstarAD-Corrected.ps1
+
+The new script replaced the incomplete function sections and ensured that each function had correctly matched parentheses and braces.
+
+
+SYNTAX VALIDATION
+
+The following PowerShell command can be used to check the script for syntax errors before running it:
+
+$path = 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+
+$tokens = $null
+$errors = $null
+
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $path,
+    [ref]$tokens,
+    [ref]$errors
+) | Out-Null
+
+if ($errors.Count -eq 0) {
+    Write-Host 'No syntax errors found.' -ForegroundColor Green
+}
+else {
+    $errors |
+        Select-Object Message,
+            @{Name='Line'; Expression={$_.Extent.StartLineNumber}},
+            @{Name='Column'; Expression={$_.Extent.StartColumnNumber}} |
+        Format-Table -AutoSize
+}
+
+
+RESULT
+
+The corrected script passed syntax validation and completed successfully.
+
+
+============================================================
+ISSUE 4: PASSWORD DOES NOT MEET DOMAIN REQUIREMENTS
+============================================================
+
+POSSIBLE ERROR
+
+The password does not meet the password policy requirements.
+
+
+CAUSE
+
+The temporary password entered during setup does not meet the Active Directory domain password policy.
+
+The domain may require:
+
+- A minimum password length
+- Uppercase letters
+- Lowercase letters
+- Numbers
+- Special characters
+
+
+RESOLUTION
+
+Run the script again and enter a stronger temporary password.
+
+Example format:
+
+Northstar-Lab2026!
+
+Do not store or publish the actual lab password in GitHub.
+
+
+============================================================
+ISSUE 5: SCRIPT IS RUN FROM THE WRONG FILE LOCATION
+============================================================
+
+POSSIBLE ERROR
+
+The term is not recognized as the name of a cmdlet, function, script file, or operable program.
+
+
+CAUSE
+
+PowerShell cannot find the script at the specified path.
+
+This can also happen when multiple copies exist with names such as:
+
+setup-NorthstarAD.ps1
+setup-NorthstarAD (1).ps1
+setup-NorthstarAD-Corrected.ps1
+
+
+RESOLUTION
+
+Confirm the script location:
+
+Get-ChildItem 'C:\Users\Administrator\Downloads' |
+    Where-Object { $_.Name -like '*NorthstarAD*' }
+
+Run the corrected file using its full path:
+
+& 'C:\Users\Administrator\Downloads\setup-NorthstarAD-Corrected.ps1'
+
+
+============================================================
+ISSUE 6: ACTIVE DIRECTORY MODULE IS MISSING
+============================================================
+
+POSSIBLE ERROR
+
+The specified module 'ActiveDirectory' was not loaded.
+
+
+CAUSE
+
+The Active Directory PowerShell module is not installed, or the script is being run on a system without the required management tools.
+
+
+VERIFICATION
+
+Get-Module -ListAvailable ActiveDirectory
+
+
+RESOLUTION
+
+On Windows Server, install the Active Directory management tools:
+
+Install-WindowsFeature RSAT-AD-PowerShell
+
+Then import the module:
+
+Import-Module ActiveDirectory
+
+
+============================================================
+ISSUE 7: SCRIPT IS NOT RUN AS ADMINISTRATOR
+============================================================
+
+POSSIBLE ERROR
+
+The script requires elevation.
+Access is denied.
+
+
+CAUSE
+
+The PowerShell window was not opened with administrative privileges.
+
+
+RESOLUTION
+
+Close PowerShell and reopen it by selecting:
+
+Run as administrator
+
+Run the script again after elevation.
+
+
+============================================================
+VALIDATION COMMANDS
+============================================================
+
+VERIFY ORGANIZATIONAL UNITS
+
+Get-ADOrganizationalUnit -Filter * |
+    Where-Object {
+        $_.DistinguishedName -like '*OU=Northstar,*'
+    } |
+    Select-Object Name, DistinguishedName |
+    Format-Table -AutoSize
+
+
+VERIFY USERS
+
+Get-ADUser `
+    -SearchBase 'OU=Users,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, SamAccountName, Enabled |
+    Format-Table -AutoSize
+
+
+VERIFY SECURITY GROUPS
+
+Get-ADGroup `
+    -SearchBase 'OU=Groups,OU=Northstar,DC=corp,DC=com' `
+    -Filter * |
+    Select-Object Name, GroupScope, GroupCategory |
+    Format-Table -AutoSize
+
+
+============================================================
+EVIDENCE COLLECTED
+============================================================
+
+The following evidence should be stored in the GitHub repository:
+
+Evidence/
+|-- Screenshots/
+|   |-- 01-Northstar-OUs.png
+|   |-- 02-Northstar-Users.png
+|   |-- 03-Northstar-Groups.png
+|   `-- 04-Script-Completed.png
+|-- Reports/
+|   `-- Northstar-AD-Build.csv
+`-- Logs/
+    `-- Northstar-AD-Setup.log
+
+
+Before uploading evidence, verify that it does not contain:
+
+- Passwords
+- Authentication tokens
+- Personal information
+- Information from a production environment
+
+
+============================================================
+LESSONS LEARNED
+============================================================
+
+The deployment demonstrated the importance of:
+
+- Testing PowerShell scripts before deployment
+- Using safe Active Directory search methods
+- Validating PowerShell syntax
+- Maintaining one clearly named working script
+- Using repeatable scripts for temporary lab environments
+- Collecting logs, screenshots, and reports as evidence
+- Documenting errors and corrective actions
+
+These activities support GRC responsibilities such as control testing, evidence collection, change documentation, risk identification, and remediation tracking.
