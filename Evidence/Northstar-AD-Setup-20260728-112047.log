@@ -1,0 +1,111 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260728112047
+Username: CORP\Administrator
+RunAs User: CORP\Administrator
+Configuration Name: 
+Machine: WIN-MSITE54SFL9 (Microsoft Windows NT 10.0.17763.0)
+Host Application: C:\Windows\system32\WindowsPowerShell\v1.0\PowerShell_ISE.exe
+Process ID: 6204
+PSVersion: 5.1.17763.3770
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.17763.3770
+BuildVersion: 10.0.17763.3770
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Building Northstar lab objects in domain: corp.com
+
+==> Creating organizational units
+Created OU: OU=Northstar,DC=corp,DC=com
+Created OU: OU=Users,OU=Northstar,DC=corp,DC=com
+Created OU: OU=IT,OU=Users,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Administration,OU=Users,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Teachers,OU=Users,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Students,OU=Users,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Service Accounts,OU=Users,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Disabled Users,OU=Users,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Computers,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Servers,OU=Computers,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Staff Workstations,OU=Computers,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Student Workstations,OU=Computers,OU=Northstar,DC=corp,DC=com
+Created OU: OU=Groups,OU=Northstar,DC=corp,DC=com
+
+==> Creating security groups
+Created group: GG_IT_Admins
+Created group: GG_School_Admins
+Created group: GG_Teachers
+Created group: GG_Students
+Created group: GG_StudentRecords_Read
+Created group: GG_StudentRecords_Modify
+Created group: GG_StaffRecords_Access
+Created group: GG_SharedDrive_Access
+
+==> Creating IT accounts
+Created user: jlee (Jordan Lee)
+Created user: amorgan (Alex Morgan)
+
+==> Creating administrative staff accounts
+Created user: ecarter (Emily Carter)
+Created user: lhernandez (Lisa Hernandez)
+Created user: mturner (Marcus Turner)
+
+==> Creating teacher accounts
+Created user: dnguyen (David Nguyen)
+Created user: sbrooks (Sarah Brooks)
+Created user: khall (Kevin Hall)
+
+==> Creating student accounts
+Created user: student1001 (Taylor Adams)
+Created user: student1002 (Cameron Reed)
+Created user: student1003 (Riley Lewis)
+Created user: student1004 (Jordan Price)
+Created user: student1005 (Avery Scott)
+
+==> Creating the service and disabled accounts
+Created user: svc_wazuh (Wazuh Service)
+Created user: former.teacher (Former Teacher)
+
+==> Applying group memberships
+Added ecarter to GG_School_Admins
+Added ecarter to GG_StudentRecords_Read
+Added student1004 to GG_Students
+Added student1004 to GG_SharedDrive_Access
+Added lhernandez to GG_School_Admins
+Added lhernandez to GG_StudentRecords_Modify
+Added mturner to GG_School_Admins
+Added mturner to GG_StudentRecords_Read
+Added sbrooks to GG_Teachers
+Added sbrooks to GG_StudentRecords_Read
+Added sbrooks to GG_SharedDrive_Access
+Added khall to GG_Teachers
+Added khall to GG_StudentRecords_Read
+Added khall to GG_SharedDrive_Access
+Added student1003 to GG_Students
+Added student1003 to GG_SharedDrive_Access
+Added student1005 to GG_Students
+Added student1005 to GG_SharedDrive_Access
+Added amorgan to GG_IT_Admins
+Added student1002 to GG_Students
+Added student1002 to GG_SharedDrive_Access
+Added dnguyen to GG_Teachers
+Added dnguyen to GG_StudentRecords_Read
+Added dnguyen to GG_SharedDrive_Access
+Added jlee to GG_IT_Admins
+Added student1001 to GG_Students
+Added student1001 to GG_SharedDrive_Access
+
+==> Validating the build
+
+Northstar lab setup is complete.
+Users found under the Northstar OU: 15
+Validation report: C:\Users\Administrator\Downloads\Northstar-AD-Build-20260728-112047.csv
+Troubleshooting log: C:\Users\Administrator\Downloads\Northstar-AD-Setup-20260728-112047.log
+Disabled-account test: former.teacher
+Service-account risk test: svc_wazuh has a non-expiring password.
+**********************
+Windows PowerShell transcript end
+End time: 20260728112051
+**********************
